@@ -9,17 +9,17 @@
 
 
 
-#define ICE_PINS (GPIO_Pin_0 | GPIO_Pin_1);   	// pins for ice detectors
+#define ICE_PINS (GPIO_Pin_0 | GPIO_Pin_1);   			// pins for ice detectors
 
-#define COMAND (GPIOC->BSRR |= GPIO_BSRR_BR_0); // comand mode for display
-#define WRDATA (GPIOC->BSRR |= GPIO_BSRR_BS_0); // data mode for display
+#define COMAND GPIO_ResetBits(GPIOC, GPIO_Pin_0); 	// comand mode for display
+#define WRDATA GPIO_SetBits(GPIOC, GPIO_Pin_0); 		// data mode for display
 
-#define LEDON (GPIOB->BSRR |= GPIO_BSRR_BS_14); 
-#define LEDOFF (GPIOB->BSRR |= GPIO_BSRR_BR_14);
+#define LEDON GPIO_SetBits(GPIOD, GPIO_Pin_15);	 		// blue Led LD6 light On
+#define LEDOFF GPIO_ResetBits(GPIOD, GPIO_Pin_15); 	// blue Led LD6 light Off
 
 
-unsigned int koefficient = 29600 / 0xfff; 				// Koeff 29600/4095 depends by selected resistors
-unsigned int allow_err = 5; 										// allowable error in percentage
+unsigned int koefficient = 29600 / 0xfff; 					// Koeff 29600/4095 depends by selected resistors
+unsigned int allow_err = 5; 												// allowable error in percentage
 
 void Delay(unsigned int Val) { 
 	for (; Val != 0; Val--); 
@@ -29,10 +29,10 @@ void SEND (unsigned char SDAT	)								// Display Write Function with strobe
 {	
 GPIOD->ODR |= SDAT;									// WR DATA to ODR Registr Port D
 	
-Delay(10);										
-GPIOC->BSRR |= GPIO_BSRR_BS_2;		// Generation STROB signal on PC02
 Delay(10);
-GPIOC->BSRR |= GPIO_BSRR_BR_2;	
+GPIO_SetBits(GPIOC, GPIO_Pin_2); 		// Generation STROB signal on PC02
+Delay(10);
+GPIO_ResetBits(GPIOC, GPIO_Pin_2);	
 Delay(10);	
 GPIOD->ODR &= ~0xFF;								// Reset Data Bits (Port D)
 }
@@ -58,9 +58,10 @@ char ConvertChar_LCD ( unsigned int Zifra) 					// Convert Decimal 0-9 Number in
 }
  
 
-void gpios_init() {
+void gpioa_init() {
 	// init gpios to Analog Mode for working with ADC1 
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);  
+	
   GPIO_InitTypeDef  gpioA; 	
 	gpioA.GPIO_Mode = GPIO_Mode_AN;  	
 	gpioA.GPIO_Pin = GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3 | GPIO_Pin_4; 
@@ -69,8 +70,23 @@ void gpios_init() {
 
 void lcd_init(void) { 
 
+	GPIO_InitTypeDef gpio_c_i; 
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);  	
+	gpio_c_i.GPIO_Mode = GPIO_Mode_OUT;  	
+	gpio_c_i.GPIO_Speed = GPIO_Speed_100MHz;  	
+	gpio_c_i.GPIO_PuPd = GPIO_PuPd_NOPULL;  	
+	gpio_c_i.GPIO_Pin = GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_0; 
+	GPIO_Init(GPIOC, &gpio_c_i); 
 	
-	GPIOC->BSRR |= GPIO_BSRR_BR_1; // Pre-Setup Write Only State Display
+	GPIO_InitTypeDef gpio_d_i; 
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);  	
+	gpio_d_i.GPIO_Mode = GPIO_Mode_OUT;  	
+	gpio_d_i.GPIO_Speed = GPIO_Speed_100MHz;  	
+	gpio_d_i.GPIO_PuPd = GPIO_PuPd_NOPULL;  	
+	gpio_d_i.GPIO_Pin = GPIO_Pin_All; 
+	GPIO_Init(GPIOC, &gpio_d_i); 
+
+	GPIO_ResetBits(GPIOC, GPIO_Pin_1);	 // Pre-Setup Write Only State Display
 	
 	Delay(700000); 						// Display Start Time >20 ms
 	COMAND; 												
@@ -148,7 +164,7 @@ void EXTI1_IRQHandler(void) {
 }
   
 int main(void) { 
-	gpios_init(); 
+	gpioa_init(); 
 	init_ice_buttons();
 	adc_init(); 
 	lcd_init();
