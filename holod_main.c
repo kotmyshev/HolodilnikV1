@@ -84,7 +84,7 @@ void lcd_init(void) {
 	gpio_d_i.GPIO_Speed = GPIO_Speed_100MHz;  	
 	gpio_d_i.GPIO_PuPd = GPIO_PuPd_NOPULL;  	
 	gpio_d_i.GPIO_Pin = GPIO_Pin_All; 
-	GPIO_Init(GPIOC, &gpio_d_i); 
+	GPIO_Init(GPIOD, &gpio_d_i); 
 
 	GPIO_ResetBits(GPIOC, GPIO_Pin_1);	 // Pre-Setup Write Only State Display
 	
